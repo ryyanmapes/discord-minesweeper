@@ -1,0 +1,11 @@
+{
+    "name": "mine_bot",
+    "version": "1.0.0",
+    "description": "This bot will make a game of minesweeper, just for you.",
+    "main": "bot.js",
+    "author": "JosCla",
+    "dependencies": {
+        "discord.io": "github:woor/discord.io#gateway_v6",
+        "winston": "^3.3.3"
+    }
+}
