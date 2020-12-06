@@ -2,8 +2,7 @@
 A Discord bot for Minesweeper.
 
 ## Starting the Bot
-Getting a Discord bot started involves creating a bot account, registering it with a server, creating code for it, and then finally running the bot in the command line, using `node bot.js`. This README will not go into further detail, but a guide on this topic can be found at this [DigitalTrends][1] article.
-[1]: <https://www.digitaltrends.com/gaming/how-to-make-a-discord-bot/> "How to make a Discord bot"
+Getting a Discord bot started involves creating a bot account, registering it with a server, creating code for it, and then finally running the bot in the command line, using `node bot.js`. This README will not go into further detail, but a guide on this topic can be found at this DigitalTrends article: https://www.digitaltrends.com/gaming/how-to-make-a-discord-bot/
 
 ## Using the Bot
 After turning the bot on, you can use the following commands to interact with it:
