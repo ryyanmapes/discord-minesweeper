@@ -29,14 +29,13 @@ bot.on('message', msg => {
     // Our bot needs to know if it will execute a command
     // It will listen for messages that will start with `!`
     text = msg.content;
-    if (text.substring(0, 1) == '!') {
-        var args = text.substring(1).split(' ');
-        var cmd = args[0];
-        args = args.splice(1);
+    if (text.substring(0, 1) == '>') {
+        var args = text.substring(1).split(' ').filter(str => str != '');
+        var cmd = args.shift();
 
         switch(cmd) {
             case 'on': 
-                msg.channel.send('mine_bot is on.');
+                msg.channel.send('I am live.');
                 break;
             case 'whoami':
                 msg.channel.send('You are: ' + user + '.');
