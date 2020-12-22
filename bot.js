@@ -1,9 +1,10 @@
 // Minesweeper Bot
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Including libraries
-var Discord = require('discord.io');
-var logger = require('winston');
-var auth = require('./auth.json');
+const Discord = require('discord.js');
+const bot = new Discord.Client();
+const logger = require('winston');
+const auth = require('./auth.json');
 
 // Configuring logger settings
 logger.remove(logger.transports.Console);
@@ -13,37 +14,29 @@ logger.add(new logger.transports.Console, {
 logger.level = 'debug';
 
 // Initializing Discord Bot
-var bot = new Discord.Client({
-   token: auth.token,
-   autorun: true
-});
+bot.login(auth.token)
 
 // Logging to the console that the bot is ready
-bot.on('ready', function (evt) {
-    logger.info('Connected as: ' + bot.username + ' - (' + bot.id + ')');
+bot.on('ready', () => {
+    logger.info('Connected as: ' + bot.user.username + ' - (' + bot.user.id + ')');
 });
 
 // Handling user commands
-bot.on('message', function (user, userID, channelID, message, evt) {
+bot.on('message', msg => {
     // Our bot needs to know if it will execute a command
     // It will listen for messages that will start with `!`
-    if (message.substring(0, 1) == '!') {
-        var args = message.substring(1).split(' ');
+    text = msg.content;
+    if (text.substring(0, 1) == '!') {
+        var args = text.substring(1).split(' ');
         var cmd = args[0];
         args = args.splice(1);
 
         switch(cmd) {
-            case 'on':
-                bot.sendMessage({
-                    to: channelID,
-                    message: 'mine_bot is on.'
-                });
+            case 'on': 
+                msg.channel.send('mine_bot is on.');
                 break;
             case 'whoami':
-                bot.sendMessage({
-                    to: channelID,
-                    message: 'You are: ' + user + '.'
-                });
+                msg.channel.send('You are: ' + user + '.');
                 break;
             case 'generate':
                 var field;
@@ -56,16 +49,10 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                 }
                 field = mineGen(numMines);
 
-                bot.sendMessage({
-                    to: channelID,
-                    message: 'Total Mines: :boom:' + Math.min(numMines, 81) + ':boom:\n' + field
-                });
+                msg.channel.send('Total Mines: :boom:' + Math.min(numMines, 81) + ':boom:\n' + field);
                 break;
             default:
-                bot.sendMessage({
-                    to: channelID,
-                    message: 'Invalid command.'
-                });
+                msg.channel.send('Invalid command.');
                 break;
          }
      }
