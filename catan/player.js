@@ -80,17 +80,7 @@ class CatanPlayer {
 
     // Getters
 
-    getItemInInventoryByName(name) {
-        for (var item of this.inventory) {
-            if (item.name.toLowerCase() == name.toLowerCase() || item.name.toLowerCase().split(' ').includes(name.toLowerCase())) return item;
-        }
-    }
-
-    getItemInInventoryByID(id) {
-        for (var item of this.inventory) {
-            if (item.id == id) return item;
-        }
-    }
+    
 
 }
 
@@ -127,7 +117,7 @@ function readAllPlayers() {
         var file = fs.readFileSync(players_directory + filename);
         var player = makePlayer(JSON.parse(file));
 
-        logger.info(player);
+        //logger.info(player);
         acc.push(player);
     });
     return acc;

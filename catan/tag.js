@@ -48,6 +48,10 @@ class CatanTag {
         return "__" + this.name + "__ " + acc; 
     }
 
+    getAsProperty() {
+        return {"tag":this.name}
+    }
+
     // All tags, when applied, add the lowercase of the name to the acc.
     // Returns nothing, modifies acc
     applyTag (acc, context, params) {
@@ -81,8 +85,7 @@ function toolTF(acc, context, params) {
 
 function woodenTF(acc, context, params) {
     addStat(acc, 'ignitability', 0.33, 0.0);
-
-    mulStat(acc, 'flexibility', 0.1, 0.0);
+    addStat(acc, 'flexibility', 0.1, 0.0);
 
     avgStat(acc, 'durability', 20);
     avgStat(acc, 'bouyancy', 0.5);
@@ -97,14 +100,26 @@ function cherryWoodTF(acc, context, params) {
     mulStat(acc, 'durability', 0.9, 1.0);
 }
 
+function flintTF(acc, context, params) {
+    avgStat(acc, 'durability', 30);
+    avgStat(acc, 'bouyancy', 0);
+
+    minStat(acc, 'tool_power', 2);
+}
 
 
 function initTags() {
     tag_list.push( new CatanTag("Axe", "Can be used to chop trees and wood stuff.", "Function", 0, toolTF) );
     tag_list.push( new CatanTag("Log", "Raw wood from a tree.", "Function", 0, defaultTF) );
+    tag_list.push( new CatanTag("Rod", "A long shaft. Good for tool handles.", "Function", 0, defaultTF) );
+    tag_list.push( new CatanTag("Stick", "A stick. What more is there to say?", "Function", 0, defaultTF, ["Rod"]) );
+    tag_list.push( new CatanTag("Basic Tool Head", "By chipping this into the right shape, you can use this as a head for simple tools.", "Function", 0, defaultTF, ["Axe Head", "Pickaxe Head"]) );
+    tag_list.push( new CatanTag("Axe Head", "Head of an axe.", "Function", 0, defaultTF) );
+    tag_list.push( new CatanTag("Pickaxe Head", "Head of a pickaxe.", "Function", 0, defaultTF) );
 
     tag_list.push( new CatanTag("Wooden", "Made of wood.", "Material", 0, woodenTF) );
     tag_list.push( new CatanTag("Cherry Wood", "Made of soft, fragrant cherry wood.", "Material", 1, cherryWoodTF, ["Wooden"]) );
+    tag_list.push( new CatanTag("Flint", "Made of a shard of flint. Suprisingly sharp, but not very durable.", "Material", 0, flintTF) );
     
     //logger.info(tag_list);
 }

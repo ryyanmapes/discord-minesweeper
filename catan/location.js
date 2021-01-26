@@ -13,7 +13,7 @@ const locations_directory = "./data/locations/"
 
 class CatanLocation {
     constructor (title, picture, description, transitions, subspace_names, gathers) {
-        if (title == null) this.title = new cs.PlaceName();
+        if (title == null) this.title = new cs.PlaceTitle();
         else this.title = title;
 
         this.picture = picture;
@@ -155,14 +155,6 @@ function makeTransition(obj) {
     return Object.assign(base,obj);
 }
 
-module.exports = {
-    CatanLocation : CatanLocation,
-    CatanTransition : CatanTransition,
-    saveAllLocations : saveAllLocations,
-    readAllLocations : readAllLocations,
-    getLocation : getLocation
-}
-
 // todo: I need to find a way to save everything async
 function saveAllLocations(loc_list) {
     for (loc of loc_list) {
@@ -176,7 +168,7 @@ function readAllLocations() {
         var file = fs.readFileSync(locations_directory + filename);
         var loc = makeLocation(JSON.parse(file));
 
-        logger.info(loc);
+        //logger.info(loc);
         acc.push(loc);
     });
     return acc;
@@ -187,4 +179,13 @@ function getLocation(loc_list, name) {
         if (loc.title.name.toLowerCase() == name.toLowerCase()) return loc;
     }
     return null;
+}
+
+
+module.exports = {
+    CatanLocation : CatanLocation,
+    CatanTransition : CatanTransition,
+    saveAllLocations : saveAllLocations,
+    readAllLocations : readAllLocations,
+    getLocation : getLocation
 }

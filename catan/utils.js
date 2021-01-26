@@ -18,8 +18,8 @@ function getRandomInt(min, max) {
 
 function randRound(n) {
     var min = Math.floor(n);
-    if (Math.random() < n - min) return n;
-    else return n;
+    if (Math.random() < n - min) return Math.ceil(n);
+    else return Math.floor(n);
 }
 
 function simpleRandom(n) {

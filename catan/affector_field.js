@@ -10,11 +10,12 @@ const ci = require('./item.js');
 const ce = require('./effect.js');
 const cu = require('./utils.js');
 const cx = require('./context.js');
+const { matches } = require('lodash');
 
 
-let reaction_list = [];
+let affector_list = [];
 
-class CatanReaction {
+class CatanAffector {
     constructor (name, func = trueCF, extra_params = {}) {
         this.name = name;
         this.func = func;
@@ -32,7 +33,7 @@ class CatanReaction {
 
 
 function duraDmgRF (context, params, subject, times = 1) {
-    logger.info(subject);
+    //logger.info(params);
     if (params.amount == null || subject.stats.durability == null) return "ERROR"; //todo error
     var acc = "";
 
@@ -47,55 +48,52 @@ function duraDmgRF (context, params, subject, times = 1) {
     ce.addStatusTo(subject.statuses, "Durability Damage", {"amount":dmg});
     var new_amount = ce.findStatusIn(subject.statuses, "Durability Damage").params.amount;
     var full_dura = subject.stats.durability;
-    acc += subject.name + " took " + dmg + " points of durability damage! (now " + (full_dura - new_amount) + "/" + full_dura + ")";
+    acc += "Your " + subject.name + " took " + dmg + " durability damage! (now " + (full_dura - new_amount) + "/" + full_dura + ")";
 
     if (new_amount >= subject.stats.durability) {
-        context.removeID(subject.id);
+        subject.count = 0;
         acc += "\nYour " + subject.name + " broke!";
     }
     
     return acc;
 }
 
-
-module.exports = {
-    CatanReaction : CatanReaction,
-    initReactions : initReactions,
-    getReaction : getReaction,
-    runReaction : runReaction,
-    evalReaction : evalReaction,
-    testRequires : testRequires,
-    runRequires : runRequires
+function consumeRF(context, params, subject, times = 1) {
+    subject.count = 0;
+    return "Used " + subject.name + ".";
 }
 
 
-function initReactions() {
-    reaction_list.push( new CatanReaction("dura_dmg", duraDmgRF));
+
+
+function initAffector() {
+    affector_list.push( new CatanAffector("dura_dmg", duraDmgRF));
+    affector_list.push( new CatanAffector("consume", consumeRF));
 
     //logger.info(reaction_list);
 }
 
 
-function getReaction(name) {
-    for (var reaction of reaction_list) {
+function getAffector(name) {
+    for (var reaction of affector_list) {
         if (reaction.name.toLowerCase() == name.toLowerCase()) return reaction;
     }
     return null;
 }
 
-function runReaction(context, params, subject, name, times = 1) {
-    var reaction = getReaction(name);
+function runAffector(context, params, subject, name, times = 1) {
+    var reaction = getAffector(name);
     if (reaction == null) return; // todo error
     return reaction.run(context, params, subject, times);
 }
 
 // Returns a string with the result message of the evaluated reaction.
-function evalReaction(context, subject, obj, times = 1) {
+function evalAffector(context, subject, obj, times = 1) {
     if (obj.type == null) {} // todo error
     else if (obj.type == "AND") {} // todo
     else if (obj.type == "OR") {} // todo
     
-    return runReaction(context, obj, subject, obj.type, times);
+    return runAffector(context, obj, subject, obj.type, times);
 }
 
 // Requirer and Finder Stuff
@@ -125,13 +123,7 @@ function evalFinder(context, finder, discluded_ids) {
         iter = cx.playerItemGen(context);
     }
 
-    // We extract the tags of the finder object that aren't finder parameters
-    var required_tags = [];
-    for (var param in finder) {
-        if (param != "type" && param != "count" && param != "id") required_tags.push(param);
-    }
-
-    // These are the finder-specific tags we won't search for when matching objects.
+    var must_match = finder.matches;
     // We assume we only need one item if no count is provided.
     var count_left = (finder.count == null)? 1 : finder.count;
     var id = finder.id;
@@ -145,8 +137,15 @@ function evalFinder(context, finder, discluded_ids) {
         if (discluded_ids.includes(candidate.id)) continue;
         if (id != null && candidate.id != id) continue;
 
-        for (var required of required_tags) {
-            if (!tagValFits(finder[required], candidate.stats[required])) continue;
+        if (must_match != null) {
+            var is_valid = true;
+            for (var tag in must_match) {
+                if (!tagValFits(must_match[tag], candidate.stats[tag])) {
+                    is_valid = false;
+                    break;
+                }
+            }
+            if (!is_valid) continue;
         }
 
         // If the object met all the criteria, we have to figure out how to get the count we need.
@@ -169,7 +168,7 @@ function evalFinder(context, finder, discluded_ids) {
 
     // If no match is found, we return the provided failure message to print.
     if (count_left == 0) return valid_candidates;
-    else obj.failure_message;
+    else return finder.failure_message;
 }
 
 // Either returns of a complete list of the finder matches in order, or a list of failure strings.
@@ -181,17 +180,18 @@ function evalFinders(context, finders_obj) {
 
     for (var finder of finders_obj) {
         var result = evalFinder(context, finder, discluded_ids);
-        if (typeof(result) == "String") failure_messages.push(result);
+        if (typeof(result) == 'string' || result == null) failure_messages.push(result);
         else matches.push(result);
     }
 
+    
     if (failure_messages.length > 0) return failure_messages;
     else return matches;
 }
 
 // This will return whether or not a requirerer can be fully run- so, whether all finders were able to find different subjects.
 // If this succeeds, it will return true, otherwise it will return a list of failure strings.
-function testRequires(context, requires_obj) {
+function testField(context, requires_obj) {
     // We create a deep copy here in order to *not* mangle whatever is searched through with stack-splitting and all that.
     // TODO this is a TERRIBLE way to do this! this needs to be redone at some point...
     // it might be better to just call the clean function instead of this...
@@ -199,7 +199,7 @@ function testRequires(context, requires_obj) {
     var results = evalFinders(context_cpy, requires_obj.finders);
 
     if (results.length == 0) return "ERROR: Something is wrong with your gather tables!";
-    if (typeof(results[0]) == "String") return results;
+    if (typeof(results[0]) == "string") return results;
 
     return true;
 }
@@ -215,18 +215,18 @@ function evalFindersFinals(context, finders_obj) {
     }
 }
 
-function runRequires(context, requires_obj, times = 1) {
+function runAffectorField(context, requires_obj, times = 1) {
     var results = evalFinders(context, requires_obj.finders);
 
     //logger.info(results);
 
-    if (results.length == 0) return "ERROR: Something is wrong with your gather tables";
-    if (typeof(results[0]) == "String") return results;
+    if (results.length == 0) return "ERROR: Something is wrong with your affector!";
+    if (typeof(results[0]) == "string") return results;
 
     var msg = ""
     for (var i = 0; i < results.length; i++) {
         for (var found_item of results[i]) {
-            msg += evalReaction(context, found_item, requires_obj.reactions[i], times) + "\n";
+            msg += evalAffector(context, found_item, requires_obj.effects[i], times) + "\n";
         }
     }
 
@@ -241,4 +241,19 @@ function runRequires(context, requires_obj, times = 1) {
 
 function cleanPlayerInventoryFF(context) {
     ci.cleanInventory(context.player.inventory);
+}
+
+
+
+
+module.exports = {
+    CatanAffector : CatanAffector,
+    initAffector : initAffector,
+    getAffector : getAffector,
+    runAffector : runAffector,
+    evalAffector : evalAffector,
+    testField : testField,
+    runAffectorField : runAffectorField,
+    evalFinders : evalFinders,
+    evalFindersFinals : evalFindersFinals,
 }

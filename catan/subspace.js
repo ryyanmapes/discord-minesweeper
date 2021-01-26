@@ -4,6 +4,8 @@ const Discord = require('discord.js');
 const logger = require('winston');
 const fs = require('fs');
 
+const ci = require('./item.js');
+
 const subspaces_directory = "./data/subspaces/"
 
 class PlaceTitle {
@@ -57,36 +59,45 @@ function makeTitle(obj) {
 
 
 class CatanSubspace {
-    constructor (title, picture, description, parent_location_title, transition_desc, enter_desc, exit_desc, gathers) {
+    constructor (title, picture, description = "", parent_location_title, transition_desc = "", enter_desc = "", exit_desc = "", gathers, inventory = []) {
         if (title == null) this.title = new PlaceTitle();
         else this.title = title;
-
-        this.picture = picture;
-
-        if (description == null) this.description = "";
-        else this.description = description;
 
         if (parent_location_title == null) this.parent_location_title = new PlaceTitle();
         else this.parent_location_title = parent_location_title;
 
-        if (transition_desc == null) this.transition_desc = "";
-        else this.transition_desc = transition_desc;
-        
-        if (enter_desc == null) this.enter_desc = "";
-        else this.enter_desc = enter_desc;
-
-        if (exit_desc == null) this.exit_desc = "";
-        else this.exit_desc = exit_desc;
-
-        if (gathers == null) this.gathers = null;
-        else this.gathers = gathers;
+        this.picture = picture;
+        this.description = description;
+        this.transition_desc = transition_desc;
+        this.enter_desc = enter_desc;
+        this.exit_desc = exit_desc;
+        this.gathers = gathers;
+        this.inventory = inventory;
     }
 
     getInspectLines() {
         var acc = "You are " + this.title.getFullDisplay() + ", " + this.parent_location_title.getFullDisplay() + ".\n" + this.description;
+
+        acc += "\n" + this.getInventoryLine();
+
         if (this.picture != null) return [this.picture, acc];
         return [acc];
     }
+
+    getInventoryLine() {
+        var msg = "";
+        if (this.inventory.length == 0) msg += "There's nothing here."
+        else {
+            msg += "Contains:";
+            for (var item of this.inventory) {
+                msg += "\n- ";
+                msg += item.getOverviewLine(true);
+                item.update({});
+            }
+        }
+        return msg;
+    }
+
 
     getOverviewLine() {
         if (this.transition_desc != "") return this.transition_desc;
@@ -107,12 +118,18 @@ class CatanSubspace {
 
 function makeSubspace(obj) {
     var base = new CatanSubspace();
-    return Object.assign(base,obj);
+    var applied = Object.assign(base,obj);
+
+    for (var i = 0; i < applied.inventory.length; i++) {
+        applied.inventory[i] = ci.makeItem(applied.inventory[i]);
+    }
+
+    return applied;
 }
 
 
 module.exports = {
-    PlaceName : PlaceTitle,
+    PlaceTitle : PlaceTitle,
     makeTitle : makeTitle,
     CatanSubspace : CatanSubspace,
     saveAllSubspaces : saveAllSubspaces,
@@ -135,7 +152,7 @@ function readAllSubspaces() {
         sbsp.title = makeTitle(sbsp.title);
         sbsp.parent_location_title = makeTitle(sbsp.parent_location_title);
 
-        logger.info(sbsp);
+        //logger.info(sbsp);
         acc.push(sbsp);
     });
     return acc;

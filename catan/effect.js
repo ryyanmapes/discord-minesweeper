@@ -98,7 +98,7 @@ function addStatusTo(statuses, type, params) {
             return;
         }
     }
-    stat_list.push({"type":type, "params":params});
+    statuses.push({"type":type, "params":params});
 }
 
 module.exports = {
